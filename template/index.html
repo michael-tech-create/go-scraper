@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go-Scraper Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-gray-900 dark:text-gray-100 min-h-screen font-sans transition-colors duration-200">
+
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+
+    <header class="mb-10 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="text-center sm:text-left">
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-600 mb-2">
+                Go-Scraper Engine
+            </h1>
+            <p class="text-slate-500 dark:text-gray-400 text-sm">Extract links, images and page data from any web page in real-time</p>
+        </div>
+
+        <button
+                id="themeToggle"
+                class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-gray-800 hover:bg-slate-300 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 font-medium text-sm shadow-sm transition duration-150 flex items-center gap-2"
+        >
+            <span id="themeBtnText">☀️ Light Mode</span>
+        </button>
+    </header>
+
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md dark:shadow-xl border border-slate-200 dark:border-gray-700 mb-8 transition-colors duration-200">
+        <form id="scrapeForm" class="flex flex-col md:flex-row gap-4">
+            <input
+                    type="url"
+                    id="targetUrl"
+                    required
+                    placeholder="https://example.com"
+                    class="flex-1 bg-slate-50 dark:bg-gray-950 border border-slate-300 dark:border-gray-600 rounded-lg px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-150"
+            />
+            <button
+                    type="submit"
+                    id="submitBtn"
+                    class="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-semibold px-6 py-3 rounded-lg transition duration-200 shadow-md flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-400"
+            >
+                <span>Scrape Links</span>
+            </button>
+        </form>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md dark:shadow-xl border border-slate-200 dark:border-gray-700 overflow-hidden hidden transition-colors duration-200" id="resultsContainer">
+
+        <div class="p-4 bg-slate-50 dark:bg-gray-750 border-b border-slate-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <h2 class="text-lg font-semibold text-slate-700 dark:text-gray-200">Scraped Results</h2>
+
+            <div class="flex gap-2" id="tabButtons">
+                <button data-tab="links" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-bold transition duration-150">
+                    🔗 Links <span id="tabLinkCount" class="opacity-75">0</span>
+                </button>
+                <button data-tab="images" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-bold transition duration-150">
+                    🖼️ Images <span id="tabImageCount" class="opacity-75">0</span>
+                </button>
+                <button data-tab="data" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-bold transition duration-150">
+                    📄 Page Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Links Tab -->
+        <div id="linksTab" class="max-h-96 overflow-y-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                <tr class="bg-slate-100 dark:bg-gray-950 text-slate-500 dark:text-gray-400 text-xs uppercase tracking-wider border-b border-slate-200 dark:border-gray-700">
+                    <th class="py-3 px-4 w-16">#</th>
+                    <th class="py-3 px-4">Found URL</th>
+                </tr>
+                </thead>
+                <tbody id="resultsTableBody" class="divide-y divide-slate-200 dark:divide-gray-700 text-slate-600 dark:text-gray-300">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Images Tab -->
+        <div id="imagesTab" class="max-h-96 overflow-y-auto p-4 hidden">
+            <div id="imagesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+        </div>
+
+        <!-- Page Data Tab -->
+        <div id="dataTab" class="max-h-96 overflow-y-auto p-6 hidden space-y-5">
+            <div>
+                <p class="text-xs uppercase tracking-wider text-slate-400 dark:text-gray-500 mb-1">Page Title</p>
+                <p id="dataTitle" class="text-slate-800 dark:text-gray-100 font-medium">—</p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wider text-slate-400 dark:text-gray-500 mb-1">Meta Description</p>
+                <p id="dataDescription" class="text-slate-600 dark:text-gray-300 text-sm leading-relaxed">—</p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wider text-slate-400 dark:text-gray-500 mb-1">Meta Keywords</p>
+                <p id="dataKeywords" class="text-slate-600 dark:text-gray-300 text-sm">—</p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wider text-slate-400 dark:text-gray-500 mb-2">Headings (H1 &amp; H2)</p>
+                <ul id="dataHeadings" class="space-y-1.5"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('scrapeForm');
+    const urlInput = document.getElementById('targetUrl');
+    const submitBtn = document.getElementById('submitBtn');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const tableBody = document.getElementById('resultsTableBody');
+    const tabLinkCount = document.getElementById('tabLinkCount');
+    const tabImageCount = document.getElementById('tabImageCount');
+    const imagesGrid = document.getElementById('imagesGrid');
+
+    // Theme Toggle Variables
+    const themeToggle = document.getElementById('themeToggle');
+    const themeBtnText = document.getElementById('themeBtnText');
+    const htmlElement = document.documentElement;
+
+    // Theme Toggle Functionality
+    themeToggle.addEventListener('click', () => {
+        if (htmlElement.classList.contains('dark')) {
+            htmlElement.classList.remove('dark');
+            themeBtnText.textContent = '🌙 Dark Mode';
+        } else {
+            htmlElement.classList.add('dark');
+            themeBtnText.textContent = '☀️ Light Mode';
+        }
+    });
+
+    // Tab Switching Logic
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = {
+        links: document.getElementById('linksTab'),
+        images: document.getElementById('imagesTab'),
+        data: document.getElementById('dataTab'),
+    };
+    const activeTabClasses = ['bg-gradient-to-r', 'from-red-500', 'to-rose-600', 'text-white', 'shadow-md'];
+    const inactiveTabClasses = ['bg-slate-200', 'dark:bg-gray-800', 'text-slate-600', 'dark:text-gray-300', 'hover:bg-slate-300', 'dark:hover:bg-gray-700'];
+
+    function setActiveTab(tabName) {
+        tabButtons.forEach(btn => {
+            const isActive = btn.dataset.tab === tabName;
+            activeTabClasses.forEach(cls => btn.classList.toggle(cls, isActive));
+            inactiveTabClasses.forEach(cls => btn.classList.toggle(cls, !isActive));
+        });
+
+        Object.entries(tabContents).forEach(([name, el]) => {
+            el.classList.toggle('hidden', name !== tabName);
+        });
+    }
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
+    });
+
+    // Renders the image gallery tab
+    function renderImages(images) {
+        imagesGrid.innerHTML = '';
+
+        if (!images || images.length === 0) {
+            imagesGrid.innerHTML = `<p class="col-span-full text-center text-slate-400 dark:text-gray-500 py-6">No images discovered on this page.</p>`;
+            return;
+        }
+
+        images.forEach(img => {
+            const card = document.createElement('div');
+            card.className = "bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-700 rounded-lg overflow-hidden group";
+            card.innerHTML = `
+                    <a href="${img.src}" target="_blank" class="block aspect-square bg-slate-200 dark:bg-gray-800 overflow-hidden">
+                        <img
+                            src="${img.src}"
+                            alt="${img.alt || ''}"
+                            loading="lazy"
+                            class="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                            onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2394a3b8%27 stroke-width=%271.5%27%3E%3Crect x=%273%27 y=%273%27 width=%2718%27 height=%2718%27 rx=%272%27/%3E%3Ccircle cx=%278.5%27 cy=%278.5%27 r=%271.5%27/%3E%3Cpath d=%27M21 15l-5-5L5 21%27/%3E%3C/svg%3E'; this.classList.add('p-8','opacity-40');"
+                        />
+                    </a>
+                    <p class="text-xs text-slate-500 dark:text-gray-400 px-2 py-1.5 truncate" title="${img.alt || 'No alt text'}">${img.alt || 'No alt text'}</p>
+                `;
+            imagesGrid.appendChild(card);
+        });
+    }
+
+    // Renders the page-data tab
+    function renderPageData(pageData) {
+        document.getElementById('dataTitle').textContent = pageData.title || 'No title found';
+        document.getElementById('dataDescription').textContent = pageData.description || 'No meta description found';
+        document.getElementById('dataKeywords').textContent = pageData.keywords || 'No meta keywords found';
+
+        const headingsList = document.getElementById('dataHeadings');
+        headingsList.innerHTML = '';
+
+        if (pageData.headings && pageData.headings.length > 0) {
+            pageData.headings.forEach(h => {
+                const li = document.createElement('li');
+                li.className = "text-sm text-slate-600 dark:text-gray-300 bg-slate-50 dark:bg-gray-950 border border-slate-200 dark:border-gray-700 rounded-md px-3 py-2";
+                li.textContent = h;
+                headingsList.appendChild(li);
+            });
+        } else {
+            headingsList.innerHTML = `<li class="text-sm text-slate-400 dark:text-gray-500">No H1/H2 headings found.</li>`;
+        }
+    }
+
+    // API Submission Logic
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // UI Loading State
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Scraping...`;
+
+        try {
+            const response = await fetch('http://localhost:8000/api/scrape', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: urlInput.value })
+            });
+
+            if (!response.ok) throw new Error('Backend failed to scrape');
+
+            const data = await response.json();
+            tableBody.innerHTML = '';
+
+            // Links
+            if (data.links && data.links.length > 0) {
+                data.links.forEach((link, index) => {
+                    const row = document.createElement('tr');
+                    // Use adaptive hover rows that look clean in both light and dark backgrounds
+                    row.className = "hover:bg-slate-50 dark:hover:bg-gray-700/40 transition duration-150";
+                    row.innerHTML = `
+                            <td class="py-3 px-4 text-slate-400 dark:text-gray-500 font-mono text-xs">${index + 1}</td>
+                            <td class="py-3 px-4 break-all">
+                                <a href="${link}" target="_blank" class="text-red-600 dark:text-red-400 hover:underline text-sm font-medium">${link}</a>
+                            </td>
+                        `;
+                    tableBody.appendChild(row);
+                });
+            } else {
+                tableBody.innerHTML = `<tr><td colspan="2" class="py-6 text-center text-slate-400 dark:text-gray-500">No links discovered on this page.</td></tr>`;
+            }
+
+            // Images
+            renderImages(data.images);
+
+            // Page Data
+            renderPageData(data.page_data || {});
+
+            // Tab counts
+            tabLinkCount.textContent = data.links ? data.links.length : 0;
+            tabImageCount.textContent = data.images ? data.images.length : 0;
+
+            resultsContainer.classList.remove('hidden');
+            setActiveTab('links');
+
+        } catch (error) {
+            alert('Error connecting to backend: ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>Scrape Links</span>';
+        }
+    });
+</script>
+</body>
+</html>
