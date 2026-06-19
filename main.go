@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"go-scraper/handlers"
+	"go-scraper/api"
 	"log"
 	"net/http"
 )
