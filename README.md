@@ -39,6 +39,8 @@ go run .
 
 Open `http://localhost:8000`, paste a URL, and click **Scrape Target**.
 
+On Render, leave the root directory empty. Build command: `go build -tags netgo -ldflags '-s -w' -o app`. Start command: `./app`. Render sets `PORT`; the server listens on that value and falls back to `8000` locally. The dashboard calls `/api/scrape` on the same host.
+
 ## API
 
 `POST /api/scrape`

@@ -5,6 +5,7 @@ import (
 	"go-scraper/api"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
@@ -13,8 +14,14 @@ func main() {
 
 	http.Handle("/", fs)
 	http.HandleFunc("/api/scrape", handlers.HandleScrape)
-	fmt.Println("api is running on port http://localhost:8000")
-	err := http.ListenAndServe(":8000", nil)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8000"
+	}
+	addr := ":" + port
+	fmt.Println("api is running on http://localhost" + addr)
+	err := http.ListenAndServe(addr, nil)
 
 	if err != nil {
 		log.Fatal(err)
